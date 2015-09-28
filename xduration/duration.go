@@ -1,9 +1,9 @@
-package duration
+package xduration
 
 import "errors"
 import (
 	"time"
-	"strings"
+	"unicode"
 )
 
 var errLeadingInt = errors.New("time: bad [0-9]*") // never printed
@@ -25,6 +25,16 @@ func leadingInt(s string) (x int64, rem string, err error) {
 	return x, s[i:], nil
 }
 
+func RemoveSpace(str string) string {
+	s := make([]rune, 0, len(str))
+	for _, r := range str {
+		if !unicode.IsSpace(r) {
+			s = append(s, r)
+		}
+	}
+	return string(s)
+}
+
 var unitMap = map[string]float64{
 	"ns":    float64(time.Nanosecond),
 	"us":    float64(time.Microsecond),
@@ -35,6 +45,7 @@ var unitMap = map[string]float64{
 	"m":     float64(time.Minute),
 	"h":     float64(time.Hour),
 	"d":     float64(24 * time.Hour),
+	"day":   float64(24 * time.Hour),
 	"week":  float64(7 * 24 * time.Hour),
 	"month": float64(30 * 24 * time.Hour),
 	"year":  float64(365 * 24 * time.Hour),
@@ -48,7 +59,7 @@ var unitMap = map[string]float64{
 func Parse(s string) (time.Duration, error) {
 	// [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+
 	orig := s
-	s = strings.TrimSpace(s)
+	s = RemoveSpace(s)
 	f := float64(0)
 	neg := false
 
@@ -65,7 +76,7 @@ func Parse(s string) (time.Duration, error) {
 		return 0, nil
 	}
 	if s == "" {
-		return 0, errors.New("time: invalid duration " + orig)
+		return 0, errors.New("time: invalid duration0 " + orig)
 	}
 	for s != "" {
 		g := float64(0) // this element of the sequence
@@ -75,13 +86,13 @@ func Parse(s string) (time.Duration, error) {
 
 		// The next character must be [0-9.]
 		if !(s[0] == '.' || ('0' <= s[0] && s[0] <= '9')) {
-			return 0, errors.New("time: invalid duration " + orig)
+			return 0, errors.New("time: invalid duration1 " + orig)
 		}
 		// Consume [0-9]*
 		pl := len(s)
 		x, s, err = leadingInt(s)
 		if err != nil {
-			return 0, errors.New("time: invalid duration " + orig)
+			return 0, errors.New("time: invalid duration2 " + orig)
 		}
 		g = float64(x)
 		pre := pl != len(s) // whether we consumed anything before a period
@@ -93,7 +104,7 @@ func Parse(s string) (time.Duration, error) {
 			pl := len(s)
 			x, s, err = leadingInt(s)
 			if err != nil {
-				return 0, errors.New("time: invalid duration " + orig)
+				return 0, errors.New("time: invalid duration3 " + orig)
 			}
 			scale := 1.0
 			for n := pl - len(s); n > 0; n-- {
@@ -104,7 +115,7 @@ func Parse(s string) (time.Duration, error) {
 		}
 		if !pre && !post {
 			// no digits (e.g. ".s" or "-.s")
-			return 0, errors.New("time: invalid duration " + orig)
+			return 0, errors.New("time: invalid duration4 " + orig)
 		}
 
 		// Consume unit.

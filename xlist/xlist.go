@@ -1,4 +1,4 @@
-package listex
+package xlist
 
 import . "container/list"
 
